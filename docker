@@ -64,7 +64,7 @@ def get_list(src):
     if src == 'cn':
         remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list_cn.json'
     else:
-        remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list_en.json'
+        remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list.json'
     print('remote url:', remote_url)
     try:
         r = requests.get(remote_url)
