@@ -13,6 +13,7 @@ import io
 import sys
 from tqdm import tqdm
 from prettytable import PrettyTable
+from bs4 import BeautifulSoup
 
 home = os.getenv('HOME')
 docker_home = home + '/.docker/'
@@ -39,7 +40,7 @@ def check_arch():
     elif 'arm' in arch:
         arch = 'armhf'
     else:
-        print('Your device''s arch are not in supoport')
+        print('Your device is arch are not in supoport')
         exit(1)
     return arch
 
@@ -65,15 +66,15 @@ def get_list(src):
         remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list_cn.json'
     else:
         remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list.json'
-    print('remote url:', remote_url)
+    print('Remote Url:', remote_url)
     try:
         r = requests.get(remote_url)
         if not r.status_code == 200:
-            print('Can''t get image list.')
+            print('Can not get image list.')
             exit(1)
         return r.json()
     except requests.exceptions.ConnectionError as e:
-        print('Can''t connect to GitHub. A Proxy may be needed.')
+        print('Can not connect to GitHub. A Proxy may be needed.')
         print(e)
         exit(1)
 
@@ -106,10 +107,15 @@ def pull_image(distro, src):
         print(distro + ' not found')
         exit(1)
     infos = lists.get(distro)
-    url = infos.get(arch)
     if arch not in infos.keys():
         print(distro + ' not suppoer your arch')
         exit(1)
+    time_stamp = ''
+    if infos.get('lxc'):
+        time_stamp = get_lxc(infos.get(arch))
+        url = infos.get(arch) + time_stamp + '/rootfs.tar.xz'
+    else:
+        url = infos.get(arch)
     if os.path.isfile(distro_tmp):
         print(distro + ' already downloaded')
         print('Skipping download')
@@ -118,7 +124,7 @@ def pull_image(distro, src):
         print('Url:', url)
         r = requests.get(url, stream=True)
         if not r.status_code == 200:
-            print('Can''t pull the image')
+            print('Can not pull the image')
             print('Network Error')
             exit(1)
         total_size = int(r.headers.get('Content-Length'))
@@ -133,6 +139,9 @@ def pull_image(distro, src):
     if infos.get('check') == 'ubuntu':
         check_url = 'https://partner-images.canonical.com/core/' + infos.get('version') + '/current/MD5SUMS'
         check_sum_ubuntu(distro, check_url)
+    elif infos.get('check') == 'lxc':
+        check_url = infos.get(arch) + time_stamp + '/SHA256SUMS'
+        check_sum(distro=distro, url=check_url, check='sha256')
     elif infos.get('check') == 'no':
         print(distro + ' has no check method')
         print('skiping')
@@ -145,6 +154,18 @@ def pull_image(distro, src):
     else:
         extract_fedora()
     config_image(distro, infos)
+
+
+def get_lxc(url):
+    r = requests.get(url)
+    if not r.status_code == 200:
+        print('无法获取镜像链接')
+        print('正在退出')
+        exit(1)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    urls = soup.find_all('a')
+    time_stamp = (urls[-1]).get('title')
+    return time_stamp
 
 
 def remove_image(distro):
@@ -213,12 +234,12 @@ def check_sum(distro, url, check):
     r = requests.get(url)
     file_path = docker_tmp + distro
     if not r.status_code == 200:
-        print('Can''t get checksum file,are you sure to continue? [y/N]', end=' ')
+        print('Can not get checksum file,are you sure to continue? [y/N]', end=' ')
         a = ''
         input(a)
         if not a == 'y':
-            print('Exiting')
             os.remove(file_path)
+            print('Exiting')
             exit(1)
         else:
             return
@@ -248,7 +269,7 @@ def check_sum_ubuntu(distro, url):
     r = requests.get(url)
     file_path = docker_tmp + distro
     if not r.status_code == 200:
-        print('Can''t get checksum file,are you sure to continue? [y/n]', end=' ')
+        print('Can not get checksum file,are you sure to continue? [y/n]', end=' ')
         a = ''
         input(a)
         if not a == 'y':
@@ -284,7 +305,7 @@ def run_image(arg):
     distro = arg[0]
     config = load_local()
     if distro not in config.keys():
-        print('You don''t have ' + distro + 'image')
+        print('You do not have ' + distro + 'image')
         print('Pull it before running it')
         exit(1)
     distro_path = docker_home + distro
@@ -344,7 +365,7 @@ if __name__ == "__main__":
     elif sys.argv[1] == 'pull':
         if len(sys.argv) < 3:
             print('You need to specific a image from list.')
-            print('Default mirror is en [doker pull centos] ,if you want use en please like [docker pull centos cn]')
+            print('Default mirror is en [doker pull centos] ,if you want use cn please like [docker pull centos cn]')
             exit(1)
         elif len(sys.argv) > 4:
             print('Too many arguments.')
@@ -355,7 +376,7 @@ if __name__ == "__main__":
                 mirror_from = 'cn'
             pull_image(sys.argv[2], mirror_from)
     elif sys.argv[1] == 'images':
-        print('Default mirror is en [doker images] ,if you want use en please like [docker images cn]')
+        print('Default mirror is en [doker images] ,if you want use cn please like [docker images cn]')
         mirror_from = 'en'
         if len(sys.argv) > 2:
             mirror_from = 'cn'
