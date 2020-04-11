@@ -61,10 +61,10 @@ def load_local():
 
 
 def get_list(src):
-    if src == 'en':
-        remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list.json'
-    else:
+    if src == 'cn':
         remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list_cn.json'
+    else:
+        remote_url = 'https://github.com/jiangxianfu/termux-docker/raw/master/src/list_en.json'
     print('remote url:', remote_url)
     try:
         r = requests.get(remote_url)
@@ -115,6 +115,7 @@ def pull_image(distro, src):
         print('Skipping download')
     else:
         print('Pulling image')
+        print('Url:', url)
         r = requests.get(url, stream=True)
         if not r.status_code == 200:
             print('Can''t pull the image')
@@ -344,21 +345,21 @@ if __name__ == "__main__":
     elif sys.argv[1] == 'pull':
         if len(sys.argv) < 3:
             print('You need to specific a image from list.')
-            print('Default mirror is cn [doker pull centos] ,if you want use en please like [docker pull centos en]')
+            print('Default mirror is en [doker pull centos] ,if you want use en please like [docker pull centos cn]')
             exit(1)
         elif len(sys.argv) > 4:
             print('Too many arguments.')
             exit(1)
         else:
-            mirror_from = 'cn'
+            mirror_from = 'en'
             if len(sys.argv) == 4:
-                mirror_from = 'en'
+                mirror_from = 'cn'
             pull_image(sys.argv[2], mirror_from)
     elif sys.argv[1] == 'images':
-        print('Default mirror is cn [doker images] ,if you want use en please like [docker images en]')
-        mirror_from = 'cn'
+        print('Default mirror is en [doker images] ,if you want use en please like [docker images cn]')
+        mirror_from = 'en'
         if len(sys.argv) > 2:
-            mirror_from = 'en'
+            mirror_from = 'cn'
         show_list(mirror_from)
     elif sys.argv[1] == 'remove':
         if len(sys.argv) < 3:
