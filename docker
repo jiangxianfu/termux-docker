@@ -337,7 +337,6 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 1:
         show_help()
-        print('A command is needed.')
         exit(1)
     if sys.argv[1] == 'help':
         show_help()
